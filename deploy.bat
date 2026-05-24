@@ -1,56 +1,74 @@
 @echo off
 chcp 65001 >nul
-echo ====================================
-echo   Apple Music - 一键部署助手
-echo ====================================
+title Apple Music 自动部署
+
+echo ============================================
+echo   Apple Music 自动部署工具
+echo ============================================
 echo.
 
-:: 1. 推送到 GitHub
+:: 检查是否在 Git 仓库中
+git status >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ❌ 错误：不在 Git 仓库中
+    pause
+    exit /b
+)
+
+:: 推送到 GitHub
 echo [1/3] 推送到 GitHub...
 git push -u origin master
 if %errorlevel% neq 0 (
-    echo 推送失败，请先登录 GitHub
+    echo.
+    echo ⚠ 推送失败，请登录 GitHub 后重试
     echo 按任意键打开 GitHub 登录页面...
     pause >nul
     start https://github.com/login
+    pause
     git push -u origin master
 )
-echo ✓ GitHub 推送完成
+echo ✅ GitHub 推送成功
 echo.
 
-:: 2. 打开 Vercel 部署
-echo [2/3] 打开 Vercel 部署页面...
-echo 请在浏览器中：
-echo   1. 用 GitHub 登录
-echo   2. 选择仓库 tyler-miao/apple-music
-echo   3. Root Directory 选 frontend
-echo   4. 添加环境变量 API_URL = https://后端地址.koyeb.app
+:: 获取 Vercel Token
+echo [2/3] 准备 Vercel 部署...
 echo.
-start https://vercel.com/import
+echo 请先获取 Vercel Token：
+echo 1. 打开 https://vercel.com/account/tokens
+echo 2. 点 "Create Token"
+echo 3. 名称随便填，复制生成的 Token
 echo.
-echo 部署完后把 Vercel 域名记下来，后面要用
+set /p VERCEL_TOKEN="粘贴 Vercel Token 后回车: "
+
+:: 部署到 Vercel
 echo.
-pause
+echo 正在部署到 Vercel...
+npx vercel deploy frontend --token=%VERCEL_TOKEN% --yes --name=apple-music
+if %errorlevel% neq 0 (
+    echo.
+    echo ⚠ Vercel 部署失败，请手动部署
+    echo 打开 https://vercel.com/import
+    start https://vercel.com/import
+)
 echo.
 
-:: 3. 打开 Koyeb 部署
-echo [3/3] 打开 Koyeb 部署页面...
-echo 请在浏览器中：
-echo   1. 用 GitHub 登录
-echo   2. Create App → GitHub → 选 apple-music
-echo   3. Builder: Docker, Dockerfile: /backend/Dockerfile
-echo   4. Port: 4000
-echo   5. 添加环境变量：
-echo      - CORS_ORIGIN = https://你的前端.vercel.app
-echo      - JWT_SECRET = 随机字符串
-echo      - DATABASE_URL = file:./dev.db
+:: Koyeb
+echo [3/3] 后端部署说明
+echo.
+echo Koyeb 部署步骤：
+echo 1. 打开 https://app.koyeb.com/deploy
+echo 2. 用 GitHub 登录
+echo 3. 选仓库 → Builder: Docker → Dockerfile: /backend/Dockerfile
+echo 4. Port: 4000
+echo 5. 环境变量：
+echo    - CORS_ORIGIN = 你的 Vercel 域名
+echo    - JWT_SECRET = 随机字符串
+echo    - DATABASE_URL = file:./dev.db
 echo.
 start https://app.koyeb.com/deploy
 echo.
-pause
-
-echo ====================================
-echo 部署完成！
-echo 部署成功后把 Koyeb 地址填回 Vercel 的 API_URL
-echo ====================================
+echo ============================================
+echo   部署引导完成！
+echo   部署成功后记得互填对方地址
+echo ============================================
 pause
