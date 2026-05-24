@@ -1,0 +1,160 @@
+import os
+
+path = r'C:\Users\Colorful\Desktop\app\frontend\src\components\search\SearchResults.tsx'
+
+# Read original as binary to preserve whatever encoding it has
+with open(path, 'rb') as f:
+    raw = f.read()
+
+# Find where the invalid UTF-8 is and figure out what we need
+# Just rewrite the whole file with proper content
+content = """'use client'
+
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchStore } from '@/stores/searchStore'
+import { usePlayerStore } from '@/stores/playerStore'
+import { useLyricStore } from '@/stores/lyricStore'
+import { useUIStore } from '@/stores/uiStore'
+import { gdService } from '@/services/gd-api.service'
+import { LRCParser } from '@/lib/lrc-parser'
+import { extractColorsFromImage } from '@/lib/color-thief'
+import { Music } from '@/types'
+
+export function SearchResults() {
+  const { results, isSearching, query } = useSearchStore()
+  const { setCurrentMusic, setIsPlaying } = usePlayerStore()
+  const { setLyrics } = useLyricStore()
+  const { setCoverColors } = useUIStore()
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+
+  if (isSearching) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!query && results.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/20 mb-4">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <p className="text-white/30 text-sm font-medium">搜索你喜欢的音乐</p>
+      </div>
+    )
+  }
+
+  if (results.length === 0 && query) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-white/40 text-lg font-semibold">未找到 \"{query}\" 的结果</p>
+        <p className="text-white/20 text-sm mt-2">试试更换音乐源或关键词</p>
+      </div>
+    )
+  }
+
+  const handlePlay = async (item: typeof results[0]) => {
+    setLoadingId(item.id)
+    try {
+      const audioUrl = await gdService.getUrl(item.id, item.source, 320)
+      if (!audioUrl) return
+
+      const music: Music = {
+        id: `${item.source}-${item.id}`,
+        title: item.name,
+        artist: item.artist.join(' / '),
+        album: item.album,
+        coverUrl: null,
+        audioUrl,
+        duration: 0,
+        playCount: 0,
+        source: item.source,
+        sourceId: item.id,
+      }
+      setCurrentMusic(music)
+      setIsPlaying(true)
+
+      gdService.getPic(item.picId, item.source, 500).then((coverUrl) => {
+        if (coverUrl) {
+          music.coverUrl = coverUrl
+          setCurrentMusic({ ...music })
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.onload = () => {
+            const colors = extractColorsFromImage(img)
+            setCoverColors(colors)
+          }
+          img.src = coverUrl
+        }
+      })
+
+      gdService.getLyric(item.lyricId, item.source).then((lyricData) => {
+        if (lyricData.lyric) {
+          const combined = lyricData.tlyric
+            ? lyricData.lyric + '\\n' + lyricData.tlyric
+            : lyricData.lyric
+          const parsed = LRCParser.parse(combined)
+          setLyrics(parsed)
+        }
+      })
+    } catch (err) {
+      console.error('[Play]', err)
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  return (
+    <div className="px-6 pb-8 overflow-y-auto no-scrollbar flex-1">
+      <p className="text-xs text-white/30 font-medium uppercase tracking-widest mb-4 px-1">
+        搜索结果 · {results.length} 首
+      </p>
+      <AnimatePresence>
+        <div className="space-y-1">
+          {results.map((item, idx) => (
+            <motion.div
+              key={`${item.source}-${item.id}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03, duration: 0.3 }}
+              onClick={() => handlePlay(item)}
+              className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-white/[0.06] cursor-pointer transition-all group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                {loadingId === item.id ? (
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white/30 group-hover:text-white/70 transition-colors">
+                    <polygon points="5,3 19,12 5,21" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                <p className="text-xs text-white/40 truncate mt-0.5">
+                  {item.artist.join(' / ')} · {item.album}
+                </p>
+              </div>
+              <span className="text-[10px] text-white/20 font-mono px-2 py-1 rounded-md bg-white/5">
+                {item.source}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </AnimatePresence>
+    </div>
+  )
+}
+"""
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)
+
+# Verify
+with open(path, 'rb') as f:
+    raw = f.read()
+raw.decode('utf-8')  # will raise if invalid
+print('OK: valid UTF-8 file written')

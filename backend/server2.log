@@ -1,0 +1,18 @@
+[INFO] 10:09:38 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+◇ injected env (7) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+[WS] WebSocket server running on port 4001
+[API] Server running on http://localhost:4000
+[API] CORS origin: http://localhost:3001
+[INFO] 10:10:39 Restarting: C:\Users\Colorful\Desktop\app\backend\src\routes\playlist.ts has been modified
+◇ injected env (7) from .env // tip: ⌘ enable debugging { debug: true }
+[WS] WebSocket server running on port 4001
+[ERROR] 10:10:39 Error: listen EADDRINUSE: address already in use :::4001
+[INFO] 10:10:46 Restarting: C:\Users\Colorful\Desktop\app\backend\src\routes\playlist.ts has been modified
+◇ injected env (7) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+[WS] WebSocket server running on port 4001
+[API] Server running on http://localhost:4000
+[API] CORS origin: http://localhost:3001
+[INFO] 10:10:53 Restarting: C:\Users\Colorful\Desktop\app\backend\src\routes\playlist.ts has been modified
+◇ injected env (7) from .env // tip: ⌘ enable debugging { debug: true }
+[WS] WebSocket server running on port 4001
+[ERROR] 10:10:53 Error: listen EADDRINUSE: address already in use :::4001

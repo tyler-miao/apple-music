@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  username      String
+  password      String
+  bio           String        @default("")
+  role          String        @default("USER")
+  avatar        String?
+  refreshToken  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  playlists     Playlist[]
+  playHistory   PlayHistory[]
+  likedMusic    LikedMusic[]
+}
+
+model Music {
+  id            String        @id @default(uuid())
+  title         String
+  artist        String
+  album         String?
+  albumId       String?
+  coverUrl      String?
+  audioUrl      String?
+  duration      Float         @default(0)
+  trackNumber   Int?
+  genre         String?
+  year          Int?
+  source        String        @default("local")
+  sourceId      String?
+  fileSize      Int?
+  filePath      String?
+  mimeType      String        @default("audio/mpeg")
+  playCount     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  lyrics        Lyrics[]
+  albumRel      Album?        @relation(fields: [albumId], references: [id])
+  artists       ArtistMusic[]
+  playlistItems PlaylistItem[]
+  playHistory   PlayHistory[]
+  likedBy       LikedMusic[]
+}
+
+model Album {
+  id            String        @id @default(uuid())
+  title         String
+  artist        String
+  coverUrl      String?
+  year          Int?
+  genre         String?
+  source        String        @default("local")
+  sourceId      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  musics        Music[]
+}
+
+model Artist {
+  id            String        @id @default(uuid())
+  name          String
+  bio           String?
+  avatarUrl     String?
+  genre         String?
+  source        String        @default("local")
+  sourceId      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  musics        ArtistMusic[]
+}
+
+model ArtistMusic {
+  artistId      String
+  musicId       String
+
+  artist        Artist        @relation(fields: [artistId], references: [id])
+  music         Music         @relation(fields: [musicId], references: [id])
+
+  @@id([artistId, musicId])
+}
+
+model Playlist {
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  coverUrl      String?
+  isPublic      Boolean       @default(false)
+  userId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  items         PlaylistItem[]
+}
+
+model PlaylistItem {
+  id            String        @id @default(uuid())
+  playlistId    String
+  musicId       String
+  position      Int           @default(0)
+  addedAt       DateTime      @default(now())
+
+  playlist      Playlist      @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  music         Music         @relation(fields: [musicId], references: [id])
+
+  @@unique([playlistId, musicId])
+}
+
+model Lyrics {
+  id            String        @id @default(uuid())
+  musicId       String
+  content       String
+  translated    String?
+  format        String        @default("lrc")
+  timestamps    String?
+  source        String        @default("local")
+  sourceId      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  music         Music         @relation(fields: [musicId], references: [id])
+
+  @@unique([musicId, source])
+}
+
+model PlayHistory {
+  id            String        @id @default(uuid())
+  userId        String
+  musicId       String
+  playedAt      DateTime      @default(now())
+
+  user          User          @relation(fields: [userId], references: [id])
+  music         Music         @relation(fields: [musicId], references: [id])
+}
+
+model SystemConfig {
+  key    String @id
+  value  String
+}
+
+model LikedMusic {
+  userId        String
+  musicId       String
+  title         String        @default("")
+  artist        String        @default("")
+  album         String        @default("")
+  coverUrl      String?
+  source        String        @default("")
+  sourceId      String?
+  likedAt       DateTime      @default(now())
+
+  user          User          @relation(fields: [userId], references: [id])
+  music         Music         @relation(fields: [musicId], references: [id])
+
+  @@id([userId, musicId])
+}

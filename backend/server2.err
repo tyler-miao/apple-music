@@ -1,0 +1,22 @@
+Error: listen EADDRINUSE: address already in use :::4001
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at new WebSocketServer (C:\Users\Colorful\Desktop\app\backend\node_modules\ws\lib\websocket-server.js:106:20)
+    at new WSManager (C:\Users\Colorful\Desktop\app\backend\src\websocket\index.ts:17:16)
+    at Object.<anonymous> (C:\Users\Colorful\Desktop\app\backend\src\app.ts:38:19)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1761:14)
+    at Module._compile (C:\Users\Colorful\Desktop\app\backend\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\Colorful\AppData\Local\Temp\ts-node-dev-hook-8136815408513858.js:69:33)
+    at node:internal/modules/cjs/loader:1893:10
+Error: listen EADDRINUSE: address already in use :::4001
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at new WebSocketServer (C:\Users\Colorful\Desktop\app\backend\node_modules\ws\lib\websocket-server.js:106:20)
+    at new WSManager (C:\Users\Colorful\Desktop\app\backend\src\websocket\index.ts:17:16)
+    at Object.<anonymous> (C:\Users\Colorful\Desktop\app\backend\src\app.ts:38:19)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1761:14)
+    at Module._compile (C:\Users\Colorful\Desktop\app\backend\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\Colorful\AppData\Local\Temp\ts-node-dev-hook-8136815408513858.js:69:33)
+    at node:internal/modules/cjs/loader:1893:10

@@ -1,0 +1,22 @@
+name: apple-music
+services:
+  - name: backend
+    type: web
+    port: 4000
+    docker:
+      image: node:20
+      command: npm start
+      args:
+        - workdir: /app/backend
+    env:
+      - key: PORT
+        value: "4000"
+      - key: CORS_ORIGIN
+        value: "https://apple-music-frontend.vercel.app"
+      - key: JWT_SECRET
+        value: "change-this-to-random-string"
+      - key: DATABASE_URL
+        value: "file:./dev.db"
+    routes:
+      - path: /
+        port: 4000
