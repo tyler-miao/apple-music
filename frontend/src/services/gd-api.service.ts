@@ -1,4 +1,4 @@
-import { GD_API_BASE } from '@/utils/constants'
+import { GD_API_BASE, API_HOST } from '@/utils/constants'
 
 export interface GDSearchItem {
   id: string
@@ -27,16 +27,18 @@ export class GDService {
   }
 
   async getUrl(id: string, source = 'netease', br = 320): Promise<string | null> {
-    const url = `${this.baseUrl}?types=url&source=${source}&id=${id}&br=${br}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
     try {
-      const res = await fetch(url)
+      const res = await fetch(`${this.baseUrl}?types=url&source=${source}&id=${id}&br=${br}`, { signal: controller.signal })
+      clearTimeout(timeout)
       const data = await res.json()
       if (!data?.url) return null
-      const audioUrl = data.url
-      if (source === 'bilibili') {
-        return `/api/audio?url=${encodeURIComponent(audioUrl)}&ref=${encodeURIComponent('https://www.bilibili.com')}`
-      }
-      return audioUrl
+      let ref = ''
+      if (source === 'bilibili') ref = 'https://www.bilibili.com'
+      else if (source === 'netease') ref = 'https://music.163.com'
+      else if (source === 'tencent') ref = 'https://y.qq.com'
+      return `${API_HOST}/api/audio?url=${encodeURIComponent(data.url)}${ref ? '&ref=' + encodeURIComponent(ref) : ''}`.replace(/(?<!https?:\/\/)\/\/+/g, '/')
     } catch (err) {
       console.error('[GD] url error:', err)
       return null
@@ -44,12 +46,11 @@ export class GDService {
   }
 
   async getPic(picId: string, source = 'netease', size = 500): Promise<string | null> {
-    const url = `${this.baseUrl}?types=pic&source=${source}&id=${picId}&size=${size}`
     try {
-      const res = await fetch(url)
+      const res = await fetch(`${this.baseUrl}?types=pic&source=${source}&id=${picId}&size=${size}`)
       const data = await res.json()
       if (!data?.url) return null
-      return `/api/cover?url=${encodeURIComponent(data.url)}`
+      return `${API_HOST || ''}/api/cover?url=${encodeURIComponent(data.url)}`
     } catch (err) {
       console.error('[GD] pic error:', err)
       return null
@@ -57,9 +58,8 @@ export class GDService {
   }
 
   async getLyric(id: string, source = 'netease'): Promise<{ lyric?: string; tlyric?: string }> {
-    const url = `${this.baseUrl}?types=lyric&source=${source}&id=${id}`
     try {
-      const res = await fetch(url)
+      const res = await fetch(`${this.baseUrl}?types=lyric&source=${source}&id=${id}`)
       const data = await res.json()
       return {
         lyric: data?.lyric || undefined,

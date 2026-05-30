@@ -7,6 +7,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 import { useLyricStore } from '@/stores/lyricStore'
 import { useUIStore } from '@/stores/uiStore'
 import { gdService } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { LRCParser } from '@/lib/lrc-parser'
 import { extractColorsFromImage } from '@/lib/color-thief'
 import { Music } from '@/types'
@@ -48,6 +49,7 @@ export function SearchResults() {
 
   const handlePlay = async (item: typeof results[0]) => {
     setLoadingId(item.id)
+    audioEngine.ensureResumed()
     try {
       const audioUrl = await gdService.getUrl(item.id, item.source, 320)
       if (!audioUrl) return
@@ -63,6 +65,8 @@ export function SearchResults() {
         playCount: 0,
         source: item.source,
         sourceId: item.id,
+        picId: item.picId,
+        lyricId: item.lyricId,
       }
       setCurrentMusic(music)
       setIsPlaying(true)

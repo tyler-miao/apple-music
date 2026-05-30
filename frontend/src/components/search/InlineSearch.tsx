@@ -6,6 +6,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 import { useLyricStore } from '@/stores/lyricStore'
 import { useUIStore } from '@/stores/uiStore'
 import { gdService } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { LRCParser } from '@/lib/lrc-parser'
 import { extractColorsFromImage } from '@/lib/color-thief'
 
@@ -45,13 +46,14 @@ export function InlineSearch() {
   const handlePlay = async (item: typeof results[0]) => {
     setShowPanel(false)
     inputRef.current?.blur()
+    audioEngine.ensureResumed()
     try {
       const audioUrl = await gdService.getUrl(item.id, item.source, 320)
       if (!audioUrl) return
       setCurrentMusic({
         id: `${item.source}-${item.id}`, title: item.name, artist: item.artist.join(' / '),
         album: item.album, coverUrl: null, audioUrl, duration: 0, playCount: 0,
-        source: item.source, sourceId: item.id,
+        source: item.source, sourceId: item.id, picId: item.picId, lyricId: item.lyricId,
       })
       setIsPlaying(true)
 

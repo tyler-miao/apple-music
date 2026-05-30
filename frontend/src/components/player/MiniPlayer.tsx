@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { formatTime } from '@/utils/format'
 import { hapticMedium, hapticSelection } from '@/utils/haptic'
 import { CoverArt } from './CoverArt'
+import { StereoCover } from './StereoCover'
 
 export function MiniPlayer() {
   const {
@@ -132,16 +133,10 @@ export function MiniPlayer() {
             <div className="flex-1 flex items-center justify-center px-10">
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }}
-                className="w-full max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-2xl"
-                style={{ boxShadow: `0 30px 80px ${coverColors.vibrant}33` }}
+                className="w-full max-w-[320px] aspect-square"
+                style={{ filter: `drop-shadow(0 30px 80px ${coverColors.vibrant}33)` }}
               >
-                {currentMusic?.coverUrl ? (
-                  <img src={currentMusic.coverUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="white" opacity="0.15"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                  </div>
-                )}
+                <StereoCover src={currentMusic?.coverUrl} alt="" size="100%" rounded="rounded-3xl" tiltAmount={8} />
               </motion.div>
             </div>
             <div className="px-8 pt-4 pb-1">

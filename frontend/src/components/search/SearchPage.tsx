@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { gdService } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { useSearchStore } from '@/stores/searchStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useLyricStore } from '@/stores/lyricStore'
@@ -80,14 +81,18 @@ export function SearchPage() {
 
   const handlePlay = async (item: typeof results[0]) => {
     setLoadingId(item.id)
+    audioEngine.ensureResumed()
     try {
       const audioUrl = await gdService.getUrl(item.id, item.source, 320)
       if (!audioUrl) return
-      const music = {
-        id: `${item.source}-${item.id}`, title: item.name, artist: item.artist.join(' / '),
-        album: item.album, coverUrl: null, audioUrl, duration: 0, playCount: 0,
-        source: item.source, sourceId: item.id,
-      }
+      const queueSongs = results.map((r, i) => ({
+        id: `${r.source}-${r.id}`, title: r.name, artist: r.artist.join(' / '),
+        album: r.album, coverUrl: null, audioUrl: r.id === item.id ? audioUrl : null, duration: 0, playCount: 0,
+        source: r.source, sourceId: r.id, picId: r.picId, lyricId: r.lyricId,
+      }))
+      const clickIdx = results.findIndex((r) => r.id === item.id)
+      usePlayerStore.getState().setQueue(queueSongs, clickIdx >= 0 ? clickIdx : 0)
+      const music = queueSongs[clickIdx >= 0 ? clickIdx : 0]
       setCurrentMusic(music)
       setIsPlaying(true)
       useUIStore.getState().setCurrentView('player')

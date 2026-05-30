@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -11,11 +11,11 @@ model User {
   id            String        @id @default(uuid())
   email         String        @unique
   username      String
-  password      String
+  password      String        @db.Text
   bio           String        @default("")
-  role          String        @default("USER")
-  avatar        String?
-  refreshToken  String?
+  role          String
+  avatar        String?       @db.Text
+  refreshToken  String?       @db.Text
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -30,17 +30,17 @@ model Music {
   artist        String
   album         String?
   albumId       String?
-  coverUrl      String?
-  audioUrl      String?
+  coverUrl      String?       @db.Text
+  audioUrl      String?       @db.Text
   duration      Float         @default(0)
   trackNumber   Int?
   genre         String?
   year          Int?
-  source        String        @default("local")
+  source        String
   sourceId      String?
   fileSize      Int?
-  filePath      String?
-  mimeType      String        @default("audio/mpeg")
+  filePath      String?       @db.Text
+  mimeType      String
   playCount     Int           @default(0)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -57,10 +57,10 @@ model Album {
   id            String        @id @default(uuid())
   title         String
   artist        String
-  coverUrl      String?
+  coverUrl      String?       @db.Text
   year          Int?
   genre         String?
-  source        String        @default("local")
+  source        String
   sourceId      String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -71,10 +71,10 @@ model Album {
 model Artist {
   id            String        @id @default(uuid())
   name          String
-  bio           String?
-  avatarUrl     String?
+  bio           String?       @db.Text
+  avatarUrl     String?       @db.Text
   genre         String?
-  source        String        @default("local")
+  source        String
   sourceId      String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -95,8 +95,8 @@ model ArtistMusic {
 model Playlist {
   id            String        @id @default(uuid())
   name          String
-  description   String?
-  coverUrl      String?
+  description   String?       @db.Text
+  coverUrl      String?       @db.Text
   isPublic      Boolean       @default(false)
   userId        String
   createdAt     DateTime      @default(now())
@@ -122,11 +122,11 @@ model PlaylistItem {
 model Lyrics {
   id            String        @id @default(uuid())
   musicId       String
-  content       String
-  translated    String?
-  format        String        @default("lrc")
-  timestamps    String?
-  source        String        @default("local")
+  content       String        @db.Text
+  translated    String?       @db.Text
+  format        String
+  timestamps    String?       @db.Text
+  source        String
   sourceId      String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -148,17 +148,17 @@ model PlayHistory {
 
 model SystemConfig {
   key    String @id
-  value  String
+  value  String @db.Text
 }
 
 model LikedMusic {
   userId        String
   musicId       String
-  title         String        @default("")
-  artist        String        @default("")
-  album         String        @default("")
-  coverUrl      String?
-  source        String        @default("")
+  title         String
+  artist        String
+  album         String
+  coverUrl      String?       @db.Text
+  source        String
   sourceId      String?
   likedAt       DateTime      @default(now())
 

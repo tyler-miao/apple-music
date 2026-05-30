@@ -53,10 +53,10 @@ export function extractColorsFromImage(img: HTMLImageElement): ExtractedColors {
   }
 
   return {
-    vibrant: f(vibrant, 0.55, 0.65),
-    muted: f(muted, 0.40, 0.50),
-    dark: f(dark, 0.18, 0.40),
-    light: f(light, 0.50, 0.55),
+    vibrant: f(vibrant, 0.60, 0.80),
+    muted: f(muted, 0.50, 0.65),
+    dark: f(dark, 0.20, 0.50),
+    light: f(light, 0.65, 0.70),
   }
 }
 

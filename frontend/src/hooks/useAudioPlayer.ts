@@ -28,8 +28,8 @@ export function useAudioPlayer() {
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio()
-      audioRef.current.crossOrigin = 'anonymous'
       audioRef.current.preload = 'auto'
+      audioRef.current.volume = 1
     }
     const audio = audioRef.current
     setAudioElement(audio)
@@ -51,12 +51,19 @@ export function useAudioPlayer() {
         audio.play().catch(() => {})
       }
     }
+    const onCanPlayThrough = () => {
+      if (pendingPlayRef.current) {
+        pendingPlayRef.current = false
+        audio.play().catch(() => {})
+      }
+    }
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('durationchange', onDurationChange)
     audio.addEventListener('ended', onEnded)
     audio.addEventListener('error', onError)
     audio.addEventListener('canplay', onCanPlay)
+    audio.addEventListener('canplaythrough', onCanPlayThrough)
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate)
@@ -64,6 +71,7 @@ export function useAudioPlayer() {
       audio.removeEventListener('ended', onEnded)
       audio.removeEventListener('error', onError)
       audio.removeEventListener('canplay', onCanPlay)
+      audio.removeEventListener('canplaythrough', onCanPlayThrough)
     }
   }, [nextTrack, setCurrentTime, setDuration, playbackMode])
 
@@ -72,7 +80,9 @@ export function useAudioPlayer() {
     if (!audio) return
 
     if (isPlaying && currentMusic) {
-      if (audio.readyState >= 2) {
+      const expectedSrc = currentMusic.audioUrl || currentMusic.sourceId || ''
+      const hasCorrectSrc = expectedSrc && audio.src === expectedSrc
+      if (audio.readyState >= 2 && hasCorrectSrc) {
         audio.play().catch(() => {})
       } else {
         pendingPlayRef.current = true
@@ -93,17 +103,8 @@ export function useAudioPlayer() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !currentMusic) return
-
-    const src = currentMusic.audioUrl || currentMusic.sourceId
-    if (src && audio.src !== src) {
-      audio.src = src
-      audio.load()
-
-      if (!audioEngine['ctx']) {
-        audioEngine.connect(audio)
-        audioEngine.fadeIn(500)
-      }
-    }
+    const musicId = currentMusic.id
+    let cancelled = false
 
     if (currentMusic.id !== prevMusicIdRef.current) {
       prevMusicIdRef.current = currentMusic.id
@@ -132,6 +133,31 @@ export function useAudioPlayer() {
         }
       })
     }
+
+    ;(async () => {
+      let audioUrl = currentMusic.audioUrl
+
+      if (!audioUrl) {
+        const source = currentMusic.source || 'netease'
+        const sourceId = currentMusic.sourceId || musicId.replace(/^[^-]+-/, '')
+        audioUrl = await gdService.getUrl(sourceId, source, 320)
+        if (!audioUrl) return
+      }
+
+      if (cancelled) return
+      if (audioUrl && audio.src !== audioUrl) {
+        pendingPlayRef.current = true
+        audio.pause()
+
+        if (!audioEngine['ctx'] || audio !== (audioEngine as any).audioElement) {
+          await audioEngine.connect(audio)
+        }
+        audio.crossOrigin = 'anonymous'
+        audio.src = audioUrl
+        audio.load()
+      }
+    })()
+    return () => { cancelled = true }
   }, [currentMusic])
 
   const loadCoverColors = useCallback(() => {

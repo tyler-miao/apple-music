@@ -8,6 +8,7 @@ import { useLyricStore } from '@/stores/lyricStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { gdService, GDSearchItem } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { LRCParser } from '@/lib/lrc-parser'
 import { extractColorsFromImage } from '@/lib/color-thief'
 
@@ -69,6 +70,7 @@ export function PlaylistsView() {
 
   const handlePlayAll = (songs: any[]) => {
     if (songs.length === 0) return
+    audioEngine.ensureResumed()
     const first = songs[0]
     const source = first.source || 'netease'
     const sourceId = first.sourceId || first.id.replace(/^[^-]+-/, '')
@@ -110,14 +112,19 @@ export function PlaylistsView() {
     setEditingId(null)
   }
 
-  const handlePlaySong = async (music: any) => {
+  const handlePlaySong = async (music: any, playlistSongs?: any[]) => {
     setLoadingSongId(music.id)
+    audioEngine.ensureResumed()
     try {
       const source = music.source || 'netease'
       const sourceId = music.sourceId || music.id.replace(/^[^-]+-/, '')
       const audioUrl = await gdService.getUrl(sourceId, source, 320)
       if (!audioUrl) return
       const updated = { ...music, audioUrl }
+      if (playlistSongs && playlistSongs.length > 0) {
+        const idx = playlistSongs.findIndex((s) => s.id === music.id)
+        usePlayerStore.getState().setQueue(playlistSongs, idx >= 0 ? idx : 0)
+      }
       setCurrentMusic(updated)
       setIsPlaying(true)
       addEntry(updated)
@@ -174,6 +181,7 @@ export function PlaylistsView() {
       const newId = importFromSource(searchKeyword.trim(), songs, searchSource)
       if (newId) setExpandedId(newId)
     }
+    setTimeout(() => loadCoversForPlaylist(songs), 100)
     setSearchResults([])
     setSelectedSongs(new Set())
     setShowImportPanel(false)
@@ -209,7 +217,10 @@ export function PlaylistsView() {
     const songs = fetchedTracks.filter((s) => selectedFetched.has(s.id))
     const name = fetchedPlaylistName || shareUrl.trim()
     const newId = importFromSource(name, songs, 'netease')
-    if (newId) setExpandedId(newId)
+    if (newId) {
+      setExpandedId(newId)
+      setTimeout(() => loadCoversForPlaylist(songs), 100)
+    }
     setFetchedTracks([])
     setFetchedPlaylistName('')
     setSelectedFetched(new Set())
@@ -509,7 +520,7 @@ export function PlaylistsView() {
                           ) : pl.songs.map((song, idx) => (
                             <div key={song.id || idx}
                               className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.06] group cursor-pointer transition-all"
-                              onClick={() => handlePlaySong(song)}>
+                              onClick={() => handlePlaySong(song, pl.songs)}>
                               <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 relative group/thumb">
                                 {coverCache[song.id] ? (
                                   <img src={coverCache[song.id]} alt="" className="w-full h-full object-cover" />

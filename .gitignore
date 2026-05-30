@@ -8,3 +8,14 @@ dist/
 *.flac
 uploads/
 prisma/*.db
+*.log
+*.err
+tsconfig.tsbuildinfo
+crash.log
+debug.log
+admin-panel/
+_*.ps1
+watchdog.ps1
+2.html
+url.txt
+.idea/

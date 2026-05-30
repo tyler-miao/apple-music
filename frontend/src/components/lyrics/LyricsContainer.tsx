@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LyricLine } from './LyricLine'
+import { StereoCover } from '@/components/player/StereoCover'
 import { useLyricStore } from '@/stores/lyricStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -40,23 +41,24 @@ export function LyricsContainer() {
             className="flex items-center justify-end"
             style={{ flex: 1 }}
           >
-            <div className="album-wrapper" style={{ maxWidth: '45vh', minWidth: 300, aspectRatio: 1 }}>
-              <img
+            <div style={{ maxWidth: '45vh', minWidth: 300, width: '100%', aspectRatio: 1, position: 'relative' }}>
+              <StereoCover
                 src={currentMusic.coverUrl}
                 alt={currentMusic.title}
-                className="album-img"
-                style={{ borderRadius: 24, boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}
+                size="100%"
+                rounded="rounded-3xl"
+                tiltAmount={10}
               />
               <div
-                className="album-overlay"
+                className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center"
                 style={{ borderRadius: 24 }}
                 onClick={() => {
                   const s = usePlayerStore.getState()
                   s.isPlaying ? s.setIsPlaying(false) : s.setIsPlaying(true)
                 }}
               >
-                <div className="play-btn-glass">
-                  <svg viewBox="0 0 24 24" style={{ width: 48, height: 48, fill: 'currentColor' }}>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-xl opacity-0 hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.4)' }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, fill: 'white', marginLeft: 3 }}>
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
@@ -116,11 +118,8 @@ export function LyricsContainer() {
           className="flex items-center justify-end"
           style={{ flex: 1 }}
         >
-          <div style={{ width: '45vh', minWidth: 300, aspectRatio: 1, borderRadius: 24, background: 'rgba(255,255,255,0.05)', boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}
-            className="flex items-center justify-center">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="white" opacity="0.15">
-              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-            </svg>
+          <div style={{ maxWidth: '45vh', minWidth: 300, width: '100%', aspectRatio: 1 }}>
+            <StereoCover src={null} alt="" size="100%" rounded="rounded-3xl" tilt={false} />
           </div>
         </motion.div>
       )}

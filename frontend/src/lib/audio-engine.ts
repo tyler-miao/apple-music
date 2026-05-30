@@ -6,32 +6,61 @@ export class AudioEngine {
   private audioElement: HTMLAudioElement | null = null
   private animationId: number | null = null
   private listeners: Array<() => void> = []
+  private _ready = false
+  private _readyResolve: (() => void) | null = null
+  private _readyPromise: Promise<void>
 
   private _frequencyData = new Uint8Array(64)
   private _waveformData = new Uint8Array(64)
   private _analyserBlocked = false
 
+  constructor() {
+    this._readyPromise = new Promise((resolve) => { this._readyResolve = resolve })
+  }
+
   get frequencyData(): Uint8Array { return this._frequencyData }
   get waveformData(): Uint8Array { return this._waveformData }
+  get ready(): Promise<void> { return this._readyPromise }
 
-  connect(audio: HTMLAudioElement) {
-    this.audioElement = audio
+  ensureResumed() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume()
     }
-    this.source = this.ctx.createMediaElementSource(audio)
-    this.analyser = this.ctx.createAnalyser()
-    this.analyser.fftSize = 128
-    this.gainNode = this.ctx.createGain()
-    this.source.connect(this.analyser)
-    this.analyser.connect(this.gainNode)
-    this.gainNode.connect(this.ctx.destination)
-    this._frequencyData = new Uint8Array(this.analyser.frequencyBinCount)
-    this._waveformData = new Uint8Array(this.analyser.frequencyBinCount)
-    this.startAnalyzing()
+  }
+
+  async connect(audio: HTMLAudioElement) {
+    this.audioElement = audio
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    if (this.ctx.state === 'suspended') {
+      try {
+        await this.ctx.resume()
+      } catch {
+        this._ready = true
+        this._readyResolve?.()
+        return
+      }
+    }
+    try {
+      this.source = this.ctx.createMediaElementSource(audio)
+      this.analyser = this.ctx.createAnalyser()
+      this.analyser.fftSize = 128
+      this.gainNode = this.ctx.createGain()
+      this.source.connect(this.analyser)
+      this.analyser.connect(this.gainNode)
+      this.gainNode.connect(this.ctx.destination)
+      this._frequencyData = new Uint8Array(this.analyser.frequencyBinCount)
+      this._waveformData = new Uint8Array(this.analyser.frequencyBinCount)
+      this.startAnalyzing()
+    } catch (e) {
+      console.error('[AudioEngine] Web Audio setup failed:', e)
+    }
+    this._ready = true
+    this._readyResolve?.()
   }
 
   private startAnalyzing() {

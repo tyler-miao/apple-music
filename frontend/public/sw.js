@@ -1,6 +1,6 @@
-const CACHE_NAME = 'apple-music-cache-v1'
-const MUSIC_CACHE = 'apple-music-audio-v1'
-const IMAGE_CACHE = 'apple-music-images-v1'
+const CACHE_NAME = 'apple-music-cache-v2'
+const MUSIC_CACHE = 'apple-music-audio-v2'
+const IMAGE_CACHE = 'apple-music-images-v2'
 
 const PRECACHE_URLS = [
   '/',
@@ -17,7 +17,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== MUSIC_CACHE && k !== IMAGE_CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.map((k) => caches.delete(k)))
     )
   )
   self.clients.claim()
@@ -52,7 +52,7 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    if (response.ok && response.status === 200) {
       const cache = await caches.open(cacheName)
       cache.put(request, response.clone())
     }
@@ -65,7 +65,7 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    if (response.ok && response.status === 200) {
       const cache = await caches.open(CACHE_NAME)
       cache.put(request, response.clone())
     }

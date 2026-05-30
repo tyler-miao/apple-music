@@ -8,6 +8,7 @@ const navItems = [
   { view: 'player' as const, label: '播放' },
   { view: 'search' as const, label: '搜索' },
   { view: 'playlists' as const, label: '歌单' },
+  { view: 'song' as const, label: '模组' },
 ]
 
 export function TopBar() {
@@ -37,6 +38,8 @@ export function TopBar() {
                   <><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>
                 ) : item.view === 'playlists' ? (
                   <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>
+                ) : item.view === 'song' ? (
+                  <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="12" cy="12" r="3" /></>
                 ) : (
                   <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>
                 )}

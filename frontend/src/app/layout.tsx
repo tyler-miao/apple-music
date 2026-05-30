@@ -34,6 +34,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" sizes="152x152" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23000'/><text y='75' font-size='70' text-anchor='middle' x='50'>🎵</text></svg>" />
         <link rel="apple-touch-startup-image" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 393 852'><rect width='393' height='852' fill='%23000'/></svg>" media="(device-width: 393px) and (device-height: 852px)" />
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_API_HOST || 'http://localhost:4000'} />
+        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_HOST || 'http://localhost:4000'} />
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

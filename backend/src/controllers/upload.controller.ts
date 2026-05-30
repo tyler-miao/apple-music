@@ -19,6 +19,7 @@ export class UploadController {
           title: title || path.parse(file.originalname).name,
           artist: artist || '未知艺术家',
           album: album || null,
+          source: 'local',
           filePath: file.filename,
           fileSize: file.size,
           mimeType: file.mimetype,

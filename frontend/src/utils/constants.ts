@@ -1,5 +1,6 @@
 export const API_BASE = '/api'
 export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || ''
+export const API_HOST = process.env.NEXT_PUBLIC_API_HOST || ''
 
 export const GLASS_MODES = [
   { bg: 'rgba(0,0,0,0.2)', filter: 'blur(40px) saturate(200%)', label: '默认' },

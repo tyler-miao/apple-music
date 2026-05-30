@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type AppView = 'mine' | 'player' | 'search' | 'playlists'
+export type AppView = 'mine' | 'player' | 'search' | 'playlists' | 'song'
 
 interface UIState {
   glassMode: number

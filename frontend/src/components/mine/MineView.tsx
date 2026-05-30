@@ -8,6 +8,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { usePlaylistStore } from '@/stores/playlistStore'
 import { gdService } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { extractColorsFromImage } from '@/lib/color-thief'
 
 interface LikedSong {
@@ -120,6 +121,7 @@ export function MineView() {
   }
 
   const playMusic = async (id: string, title: string, artist: string, album: string, coverUrl: string | null, source: string, sourceId: string | null) => {
+    audioEngine.ensureResumed()
     const music = {
       id,
       title, artist, album, coverUrl,
@@ -146,6 +148,7 @@ export function MineView() {
 
   const playHistoryEntry = async (entry: typeof historyEntries[0]) => {
     setHistoryLoadingId(entry.music.id)
+    audioEngine.ensureResumed()
     try {
       const { music } = entry
       if (!music.audioUrl) {
@@ -244,14 +247,27 @@ export function MineView() {
     setAdminMusicLoading(true)
     try {
       const token = localStorage.getItem('accessToken')
-      const params = new URLSearchParams({ limit: '50', page: '1' })
-      if (search) params.set('search', search)
-      const res = await fetch(`/api/admin/music?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setAdminMusic(data.musics || [])
+      if (search) {
+        const data = await gdService.search(search, 'netease', 30)
+        setAdminMusic(data.map((item) => ({
+          id: item.id,
+          title: item.name,
+          artist: Array.isArray(item.artist) ? item.artist.join(' / ') : item.artist,
+          album: item.album,
+          source: item.source,
+          coverUrl: null,
+          playCount: 0,
+          _isExternal: true,
+        })))
+      } else {
+        const params = new URLSearchParams({ limit: '50', page: '1' })
+        const res = await fetch(`/api/admin/music?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setAdminMusic(data.musics || [])
+        }
       }
     } catch {}
     setAdminMusicLoading(false)
@@ -603,7 +619,7 @@ export function MineView() {
                       <div className="flex gap-2">
                         <input value={musicSearchQuery} onChange={(e) => setMusicSearchQuery(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && fetchAdminMusic(musicSearchQuery)}
-                          placeholder="搜索音乐标题/歌手..."
+                          placeholder="搜索网易云音乐..."
                           className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/20" />
                         <button onClick={() => fetchAdminMusic(musicSearchQuery)}
                           className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white transition-all">搜索</button>
@@ -626,10 +642,10 @@ export function MineView() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 ml-2">
-                                <span className="text-[9px] text-white/20 font-mono">{m.source || 'local'}</span>
-                                <span className="text-[10px] text-white/25">{m.playCount || 0}次</span>
-                                <button onClick={() => deleteAdminMusic(m.id)}
-                                  className="px-2 py-1 text-[10px] rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/70 hover:text-red-400 transition-all">删除</button>
+                                <span className="text-[9px] text-white/20 font-mono">{m.source || 'netease'}</span>
+                                {!m._isExternal && <span className="text-[10px] text-white/25">{m.playCount || 0}次</span>}
+                                {!m._isExternal && <button onClick={() => deleteAdminMusic(m.id)}
+                                  className="px-2 py-1 text-[10px] rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/70 hover:text-red-400 transition-all">删除</button>}
                               </div>
                             </div>
                           ))}

@@ -9,6 +9,7 @@ import { PlayerView } from '@/components/player/PlayerView'
 import { PlayerBar } from '@/components/player/PlayerBar'
 import { SearchPage } from '@/components/search/SearchPage'
 import { PlaylistsView } from '@/components/playlist/PlaylistsView'
+import { SongCardView } from '@/components/song/SongCardView'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -21,6 +22,7 @@ function MainContent() {
     player: <PlayerView />,
     search: <SearchPage />,
     playlists: <PlaylistsView />,
+    song: <SongCardView />,
   }
 
   return (

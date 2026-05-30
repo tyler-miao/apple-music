@@ -45,13 +45,13 @@ export function toRgbString(r: number, g: number, b: number, a = 1): string {
   return a < 1 ? `rgba(${r},${g},${b},${a})` : `rgb(${r},${g},${b})`
 }
 
-export function processCoverColors(vibrant: string, muted: string, dark: string): [string, string, string] {
-  return [vibrant, muted, dark].map((c) => {
+export function processCoverColors(vibrant: string, muted: string, dark: string, light: string): [string, string, string, string] {
+  return [vibrant, muted, dark, light].map((c) => {
     const rgb = parseRgb(c)
     const [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2])
-    const clampedL = Math.max(0.20, Math.min(l, 0.45))
-    const clampedS = Math.min(s, 0.65)
+    const clampedL = Math.max(0.18, Math.min(l, 0.55))
+    const clampedS = Math.min(s, 0.75)
     const [r, g, b] = hslToRgb(h, clampedS, clampedL)
-    return toRgbString(r, g, b, 0.75)
-  }) as [string, string, string]
+    return toRgbString(r, g, b, 0.70)
+  }) as [string, string, string, string]
 }

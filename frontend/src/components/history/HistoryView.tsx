@@ -7,6 +7,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 import { useLyricStore } from '@/stores/lyricStore'
 import { useUIStore } from '@/stores/uiStore'
 import { gdService } from '@/services/gd-api.service'
+import { audioEngine } from '@/lib/audio-engine'
 import { LRCParser } from '@/lib/lrc-parser'
 import { extractColorsFromImage } from '@/lib/color-thief'
 
@@ -19,6 +20,7 @@ export function HistoryView() {
 
   const handlePlay = async (entry: typeof entries[0]) => {
     setLoadingId(entry.music.id)
+    audioEngine.ensureResumed()
     try {
       const { music } = entry
       if (!music.audioUrl) {

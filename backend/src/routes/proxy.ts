@@ -21,6 +21,13 @@ router.all('/gd', async (req: Request, res: Response) => {
       headers: { 'Accept': 'application/json' },
     })
 
+    const contentType = response.headers.get('content-type') || ''
+    if (!response.ok || !contentType.includes('application/json')) {
+      const text = await response.text()
+      console.error('[Proxy] GD API non-JSON response:', text.slice(0, 200))
+      return res.status(502).json({ error: '音乐API返回异常', detail: text.slice(0, 200) })
+    }
+
     const data = await response.json()
     res.json(data)
   } catch (err: any) {

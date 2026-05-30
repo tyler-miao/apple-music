@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import path from 'path'
 import fs from 'fs'
+import { Readable } from 'stream'
 import config from './config'
 import { errorHandler } from './middleware/error'
 import authRoutes from './routes/auth'
@@ -15,7 +16,7 @@ import { WSManager } from './websocket'
 
 const app = express()
 
-app.use(cors({ origin: config.corsOrigin, credentials: true }))
+app.use(cors({ origin: true, credentials: true }))
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true }))
 
@@ -33,15 +34,21 @@ app.use('/api/upload', uploadRoutes)
 // CORS proxy routes (moved from Next.js API routes)
 app.get('/api/cover', async (req, res) => {
   const url = req.query.url as string
-  if (!url) return res.status(400).json({ error: 'Missing url' })
+  if (!url) {
+    res.set({ 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' })
+    return res.send('<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"><rect width="500" height="500" fill="#1a1a2e"/><circle cx="250" cy="210" r="80" fill="none" stroke="#ffffff20" stroke-width="8"/><path d="M250 290v80M200 370h100" stroke="#ffffff20" stroke-width="8" stroke-linecap="round"/><text x="250" y="440" text-anchor="middle" fill="#ffffff20" font-family="sans-serif" font-size="24">No Cover</text></svg>')
+  }
   try {
-    const response = await fetch(url)
-    if (!response.ok) return res.status(502).json({ error: 'Failed to fetch image' })
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) })
+    if (!response.ok) throw new Error('Not OK')
     const buffer = await response.arrayBuffer()
     const contentType = response.headers.get('content-type') || 'image/jpeg'
     res.set({ 'Content-Type': contentType, 'Cache-Control': 'public, max-age=604800', 'Access-Control-Allow-Origin': '*' })
     res.send(Buffer.from(buffer))
-  } catch { res.status(502).json({ error: 'Proxy failed' }) }
+  } catch {
+    res.set({ 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' })
+    res.send('<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"><rect width="500" height="500" fill="#1a1a2e"/><circle cx="250" cy="210" r="80" fill="none" stroke="#ffffff20" stroke-width="8"/><path d="M250 290v80M200 370h100" stroke="#ffffff20" stroke-width="8" stroke-linecap="round"/><text x="250" y="440" text-anchor="middle" fill="#ffffff20" font-family="sans-serif" font-size="24">No Cover</text></svg>')
+  }
 })
 
 app.get('/api/audio', async (req, res) => {
@@ -53,20 +60,30 @@ app.get('/api/audio', async (req, res) => {
   const range = req.headers['range']
   if (range) headers['Range'] = range as string
   try {
-    const response = await fetch(url, { headers })
-    const resHeaders: Record<string, string> = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Content-Range' }
-    const ct = response.headers.get('content-type') || 'audio/mpeg'
-    resHeaders['Content-Type'] = ct
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
+    if (!response.ok || !response.body) return res.status(502).json({ error: 'Proxy failed' })
+    const status = range && response.status === 206 ? 206 : 200
+    res.status(status)
+    res.set({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Expose-Headers': 'Content-Range',
+      'Content-Type': response.headers.get('content-type') || 'audio/mpeg',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    })
     const cl = response.headers.get('content-length')
-    if (cl) resHeaders['Content-Length'] = cl
+    if (cl) res.set('Content-Length', cl)
     const cr = response.headers.get('content-range')
-    if (cr) resHeaders['Content-Range'] = cr
-    const buffer = await response.arrayBuffer()
-    res.status(range && response.status === 206 ? 206 : 200).set(resHeaders).send(Buffer.from(buffer))
-  } catch { res.status(502).json({ error: 'Proxy failed' }) }
+    if (cr) res.set('Content-Range', cr)
+    const stream = Readable.fromWeb(response.body)
+    stream.on('error', () => { try { res.end() } catch {} })
+    res.on('close', () => { try { stream.destroy() } catch {} })
+    stream.pipe(res)
+  } catch { 
+    try { res.status(502).json({ error: 'Proxy failed' }) } catch {} 
+  }
 })
 
-app.use('/api/playlist', playlistRoutes)
 app.use('/api/playlist', playlistRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/proxy', proxyRoutes)
