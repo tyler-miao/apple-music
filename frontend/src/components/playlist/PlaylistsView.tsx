@@ -77,20 +77,24 @@ export function PlaylistsView() {
     usePlayerStore.getState().setQueue(songs, 0)
     setCurrentView('player')
     const playFirst = async () => {
-      const audioUrl = await gdService.getUrl(sourceId, source, 320)
+      const source = first.source || 'netease'
+      const sourceId = first.sourceId || first.id.replace(/^[^-]+-/, '')
+      const [audioUrl, coverUrl] = await Promise.all([
+        gdService.getUrl(sourceId, source, 320),
+        gdService.getPic(first.picId || '', source, 500),
+      ])
       if (!audioUrl) return
-      const updated = { ...first, audioUrl }
+      const updated = { ...first, audioUrl, coverUrl }
       usePlayerStore.getState().setCurrentMusic(updated)
       usePlayerStore.getState().setIsPlaying(true)
       addEntry(updated)
-      gdService.getPic(first.picId || '', source, 500).then((url) => {
-        if (!url) return
-        usePlayerStore.getState().setCurrentMusic({ ...usePlayerStore.getState().currentMusic!, coverUrl: url })
+      if (coverUrl) {
         const img = new Image()
         img.crossOrigin = 'anonymous'
-        img.onload = () => setCoverColors(extractColorsFromImage(img))
-        img.src = url
-      })
+        img.onload = () => { try { setCoverColors(extractColorsFromImage(img)) } catch {} }
+        img.onerror = () => {}
+        img.src = coverUrl
+      }
       gdService.getLyric(first.lyricId || sourceId, source).then((d) => {
         if (!d.lyric) return
         const c = d.tlyric ? d.lyric + '\n' + d.tlyric : d.lyric
@@ -118,9 +122,12 @@ export function PlaylistsView() {
     try {
       const source = music.source || 'netease'
       const sourceId = music.sourceId || music.id.replace(/^[^-]+-/, '')
-      const audioUrl = await gdService.getUrl(sourceId, source, 320)
+      const [audioUrl, coverUrl] = await Promise.all([
+        gdService.getUrl(sourceId, source, 320),
+        gdService.getPic(music.picId || '', source, 500),
+      ])
       if (!audioUrl) return
-      const updated = { ...music, audioUrl }
+      const updated = { ...music, audioUrl, coverUrl }
       if (playlistSongs && playlistSongs.length > 0) {
         const idx = playlistSongs.findIndex((s) => s.id === music.id)
         usePlayerStore.getState().setQueue(playlistSongs, idx >= 0 ? idx : 0)
@@ -130,14 +137,13 @@ export function PlaylistsView() {
       addEntry(updated)
       setCurrentView('player')
 
-      gdService.getPic(music.picId || '', source, 500).then((url) => {
-        if (!url) return
-        setCurrentMusic({ ...usePlayerStore.getState().currentMusic!, coverUrl: url })
+      if (coverUrl) {
         const img = new Image()
         img.crossOrigin = 'anonymous'
-        img.onload = () => setCoverColors(extractColorsFromImage(img))
-        img.src = url
-      })
+        img.onload = () => { try { setCoverColors(extractColorsFromImage(img)) } catch {} }
+        img.onerror = () => {}
+        img.src = coverUrl
+      }
 
       gdService.getLyric(music.lyricId || sourceId, source).then((d) => {
         if (!d.lyric) return
@@ -523,7 +529,7 @@ export function PlaylistsView() {
                               onClick={() => handlePlaySong(song, pl.songs)}>
                               <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 relative group/thumb">
                                 {coverCache[song.id] ? (
-                                  <img src={coverCache[song.id]} alt="" className="w-full h-full object-cover" />
+                                  <img src={coverCache[song.id]} alt="" loading="lazy" className="w-full h-full object-cover" />
                                 ) : null}
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/thumb:opacity-100 transition-opacity">
                                   {loadingSongId === song.id ? (

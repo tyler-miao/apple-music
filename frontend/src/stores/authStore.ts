@@ -19,8 +19,8 @@ interface AuthState {
   isLoading: boolean
   error: string | null
 
-  login: (email: string, password: string) => Promise<boolean>
-  register: (email: string, username: string, password: string) => Promise<boolean>
+  login: (identifier: string, password: string) => Promise<boolean>
+  register: (email: string, phone: string, username: string, password: string) => Promise<boolean>
   logout: () => void
   clearError: () => void
   updateAvatar: (avatarUrl: string) => Promise<void>
@@ -44,13 +44,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  login: async (email, password) => {
+  login: async (identifier, password) => {
     set({ isLoading: true, error: null })
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       })
       const data = await res.json()
       if (!res.ok) { set({ isLoading: false, error: data.error || '登录失败' }); return false }
@@ -64,13 +64,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (email, username, password) => {
+  register: async (email, phone, username, password) => {
     set({ isLoading: true, error: null })
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username, password }),
+        body: JSON.stringify({ email: email || undefined, phone: phone || undefined, username, password }),
       })
       const data = await res.json()
       if (!res.ok) { set({ isLoading: false, error: data.error || '注册失败' }); return false }

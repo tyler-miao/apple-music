@@ -45,7 +45,9 @@ export function MineView() {
   const { entries: historyEntries } = useHistoryStore()
   const { playlists } = usePlaylistStore()
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [registerMethod, setRegisterMethod] = useState<'email' | 'phone'>('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showAdmin, setShowAdmin] = useState(false)
@@ -69,14 +71,16 @@ export function MineView() {
   const [gdApiUrl, setGdApiUrl] = useState('')
   const [configSaving, setConfigSaving] = useState(false)
   const [configSaved, setConfigSaved] = useState(false)
+  const [visitStats, setVisitStats] = useState<any>(null)
+  const [loadingVisits, setLoadingVisits] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
     const ok = mode === 'login'
-      ? await login(email, password)
-      : await register(email, username, password)
-    if (ok) { setEmail(''); setPassword(''); setUsername('') }
+      ? await login(email || phone, password)
+      : await register(registerMethod === 'email' ? email : '', registerMethod === 'phone' ? phone : '', username, password)
+    if (ok) { setEmail(''); setPhone(''); setPassword(''); setUsername('') }
   }
 
   const fetchUsers = async () => {
@@ -271,6 +275,18 @@ export function MineView() {
       }
     } catch {}
     setAdminMusicLoading(false)
+  }
+
+  const fetchVisitStats = async () => {
+    setLoadingVisits(true)
+    try {
+      const token = localStorage.getItem('accessToken')
+      const res = await fetch('/api/admin/visits', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) setVisitStats(await res.json())
+    } catch {}
+    setLoadingVisits(false)
   }
 
   const deleteAdminMusic = async (id: string) => {
@@ -556,13 +572,14 @@ export function MineView() {
             >
               {/* 统计卡片 */}
               {adminStats && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-5 gap-2 mb-3">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-6 gap-2 mb-3">
                   {[
                     { label: '用户', value: adminStats.totalUsers, color: 'text-blue-400' },
                     { label: '音乐', value: adminStats.totalMusic, color: 'text-green-400' },
                     { label: '歌单', value: adminStats.totalPlaylists, color: 'text-purple-400' },
                     { label: '播放', value: adminStats.totalPlays, color: 'text-orange-400' },
                     { label: '收藏', value: adminStats.totalLiked, color: 'text-red-400' },
+                    { label: '访问', value: visitStats?.totalVisits ?? '...', color: 'text-cyan-400' },
                   ].map((s) => (
                     <div key={s.label} className="rounded-xl p-3 backdrop-blur-xl border border-white/[0.06] text-center"
                       style={{ background: 'rgba(255,255,255,0.03)' }}>
@@ -574,15 +591,15 @@ export function MineView() {
               )}
 
               <div className="flex gap-2 mb-2">
-                <button onClick={() => { const n = adminPanel === 'users' ? null : 'users'; setAdminPanel(n); if (n) { fetchUsers(); fetchAdminStats() } }}
+                <button onClick={() => { const n = adminPanel === 'users' ? null : 'users'; setAdminPanel(n); if (n) { fetchUsers(); fetchAdminStats(); fetchVisitStats() } }}
                   className={`flex-1 px-4 py-3 rounded-2xl backdrop-blur-xl border text-sm font-medium transition-all ${adminPanel === 'users' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' : 'bg-white/[0.03] border-white/[0.06] text-white/60'}`}>
                   用户管理
                 </button>
-                <button onClick={() => { const n = adminPanel === 'music' ? null : 'music'; setAdminPanel(n); if (n) { fetchAdminMusic(musicSearchQuery); fetchAdminStats() } }}
+                <button onClick={() => { const n = adminPanel === 'music' ? null : 'music'; setAdminPanel(n); if (n) { fetchAdminMusic(musicSearchQuery); fetchAdminStats(); fetchVisitStats() } }}
                   className={`flex-1 px-4 py-3 rounded-2xl backdrop-blur-xl border text-sm font-medium transition-all ${adminPanel === 'music' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' : 'bg-white/[0.03] border-white/[0.06] text-white/60'}`}>
                   音乐管理
                 </button>
-                <button onClick={() => { const n = adminPanel === 'config' ? null : 'config'; setAdminPanel(n); if (n) { fetchAdminConfig(); fetchAdminStats() } }}
+                <button onClick={() => { const n = adminPanel === 'config' ? null : 'config'; setAdminPanel(n); if (n) { fetchAdminConfig(); fetchAdminStats(); fetchVisitStats() } }}
                   className={`flex-1 px-4 py-3 rounded-2xl backdrop-blur-xl border text-sm font-medium transition-all ${adminPanel === 'config' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' : 'bg-white/[0.03] border-white/[0.06] text-white/60'}`}>
                   系统配置
                 </button>
@@ -692,9 +709,21 @@ export function MineView() {
           <p className="text-sm text-white/40 mt-1.5">{mode === 'login' ? '登录以同步你的音乐数据' : '注册以开始你的音乐之旅'}</p>
         </motion.div>
         <motion.form initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }} onSubmit={handleSubmit} className="space-y-3">
+          {mode === 'register' && (
+            <div className="flex rounded-2xl bg-white/[0.04] border border-white/[0.06] p-1">
+              <button type="button" onClick={() => { setRegisterMethod('email'); setPhone('') }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${registerMethod === 'email' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>邮箱注册</button>
+              <button type="button" onClick={() => { setRegisterMethod('phone'); setEmail('') }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${registerMethod === 'phone' ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>手机号注册</button>
+            </div>
+          )}
           <div className="space-y-1">
-            <label className="text-[11px] text-white/30 font-medium px-1">邮箱</label>
-            <input type="email" placeholder="your@email.com" value={email} required onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-sm outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all placeholder:text-white/15" />
+            <label className="text-[11px] text-white/30 font-medium px-1">{mode === 'login' ? '邮箱 / 手机号' : registerMethod === 'email' ? '邮箱' : '手机号'}</label>
+            {mode === 'login' || registerMethod === 'email' ? (
+              <input type={mode === 'login' ? 'text' : 'email'} placeholder={mode === 'login' ? 'your@email.com 或手机号' : 'your@email.com'} value={email} required onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-sm outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all placeholder:text-white/15" />
+            ) : (
+              <input type="tel" placeholder="13800138000" value={phone} required pattern="1\d{10}" onChange={e => setPhone(e.target.value)} className="w-full px-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-sm outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all placeholder:text-white/15" />
+            )}
           </div>
           {mode === 'register' && (
             <div className="space-y-1">
@@ -713,7 +742,7 @@ export function MineView() {
         </motion.form>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-center text-xs text-white/30 mt-8">
           {mode === 'login' ? '还没有账户？' : '已有账户？'}
-          <button onClick={() => { clearError(); setMode(mode === 'login' ? 'register' : 'login') }} className="text-white/60 hover:text-white ml-1.5 underline underline-offset-2 transition-colors">{mode === 'login' ? '注册' : '登录'}</button>
+          <button onClick={() => { clearError(); setMode(mode === 'login' ? 'register' : 'login'); setEmail(''); setPhone('') }} className="text-white/60 hover:text-white ml-1.5 underline underline-offset-2 transition-colors">{mode === 'login' ? '注册' : '登录'}</button>
         </motion.p>
         <motion.p className="text-center text-[10px] text-white/15 mt-4">第一个注册的用户自动成为管理员</motion.p>
       </div>

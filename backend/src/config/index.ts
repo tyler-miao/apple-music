@@ -8,7 +8,7 @@ export const config = {
   wsPort: parseInt(process.env.WS_PORT || '4001', 10),
   jwtSecret: process.env.JWT_SECRET || 'apple-music-jwt-secret-dev',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'apple-music-refresh-secret-dev',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   databaseUrl: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/apple_music',

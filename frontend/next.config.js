@@ -9,7 +9,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:4000'}/api/:path*`,
+        destination: `${process.env.API_URL || process.env.RAILWAY_SERVICE_BACKEND_URL || 'http://backend.railway.internal:8080'}/api/:path*`,
       },
     ]
   },

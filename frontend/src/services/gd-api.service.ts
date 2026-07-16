@@ -13,17 +13,26 @@ export interface GDSearchItem {
 export class GDService {
   private baseUrl = GD_API_BASE
 
+  private searchController: AbortController | null = null
+
   async search(keyword: string, source = 'netease', count = 20, pages = 1): Promise<GDSearchItem[]> {
+    if (this.searchController) this.searchController.abort()
+    this.searchController = new AbortController()
+    const { signal } = this.searchController
+
     const url = `${this.baseUrl}?types=search&source=${source}&name=${encodeURIComponent(keyword)}&count=${count}&pages=${pages}`
-    try {
-      const res = await fetch(url)
-      if (!res.ok) return []
-      const data = await res.json()
-      return Array.isArray(data) ? data : []
-    } catch (err) {
-      console.error('[GD] search error:', err)
-      return []
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(url, { signal })
+        if (!res.ok) return []
+        const data = await res.json()
+        if (Array.isArray(data)) return data
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return []
+        if (attempt === 0) await new Promise(r => setTimeout(r, 600))
+      }
     }
+    return []
   }
 
   async getUrl(id: string, source = 'netease', br = 320): Promise<string | null> {
@@ -45,12 +54,18 @@ export class GDService {
     }
   }
 
+  private picCache = new Map<string, string>()
+
   async getPic(picId: string, source = 'netease', size = 500): Promise<string | null> {
+    const cacheKey = `${source}:${picId}`
+    const cached = this.picCache.get(cacheKey)
+    if (cached) return cached
     try {
       const res = await fetch(`${this.baseUrl}?types=pic&source=${source}&id=${picId}&size=${size}`)
       const data = await res.json()
       if (!data?.url) return null
-      return `${API_HOST || ''}/api/cover?url=${encodeURIComponent(data.url)}`
+      this.picCache.set(cacheKey, data.url)
+      return data.url
     } catch (err) {
       console.error('[GD] pic error:', err)
       return null

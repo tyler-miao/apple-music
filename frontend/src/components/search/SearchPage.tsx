@@ -68,10 +68,12 @@ export function SearchPage() {
   }
 
   const handleSearch = async () => {
+    if (isSearching) return
     const q = query.trim()
     if (!q) return
     setIsSearching(true)
     const data = await gdService.search(q, source, 30)
+    if (q !== useSearchStore.getState().query.trim()) return
     setResults(data.map((item) => ({
       id: item.id, name: item.name, artist: item.artist, album: item.album,
       picId: item.pic_id, lyricId: item.lyric_id, source: item.source,
@@ -83,11 +85,14 @@ export function SearchPage() {
     setLoadingId(item.id)
     audioEngine.ensureResumed()
     try {
-      const audioUrl = await gdService.getUrl(item.id, item.source, 320)
+      const [audioUrl, coverUrl] = await Promise.all([
+        gdService.getUrl(item.id, item.source, 320),
+        gdService.getPic(item.picId, item.source, 500),
+      ])
       if (!audioUrl) return
       const queueSongs = results.map((r, i) => ({
         id: `${r.source}-${r.id}`, title: r.name, artist: r.artist.join(' / '),
-        album: r.album, coverUrl: null, audioUrl: r.id === item.id ? audioUrl : null, duration: 0, playCount: 0,
+        album: r.album, coverUrl: r.id === item.id ? coverUrl : null, audioUrl: r.id === item.id ? audioUrl : null, duration: 0, playCount: 0,
         source: r.source, sourceId: r.id, picId: r.picId, lyricId: r.lyricId,
       }))
       const clickIdx = results.findIndex((r) => r.id === item.id)
@@ -97,14 +102,15 @@ export function SearchPage() {
       setIsPlaying(true)
       useUIStore.getState().setCurrentView('player')
 
-      gdService.getPic(item.picId, item.source, 500).then((url) => {
-        if (!url) return
-        setCurrentMusic({ ...usePlayerStore.getState().currentMusic!, coverUrl: url })
+      if (coverUrl) {
         const img = new Image()
         img.crossOrigin = 'anonymous'
-        img.onload = () => setCoverColors(extractColorsFromImage(img))
-        img.src = url
-      })
+        img.onload = () => {
+          try { setCoverColors(extractColorsFromImage(img)) } catch {}
+        }
+        img.onerror = () => {}
+        img.src = coverUrl
+      }
 
       gdService.getLyric(item.lyricId, item.source).then((d) => {
         if (!d.lyric) return

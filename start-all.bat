@@ -1,5 +1,5 @@
 ﻿@echo off
-title Apple Music - 启动中
+title Open Music - 启动中
 cd /d "%~dp0"
 
 :: Start MySQL

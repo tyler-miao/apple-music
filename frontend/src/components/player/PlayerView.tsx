@@ -7,8 +7,15 @@ import { StereoCover } from '@/components/player/StereoCover'
 import { useLyricStore } from '@/stores/lyricStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useHistoryStore } from '@/stores/historyStore'
+import { useUIStore } from '@/stores/uiStore'
 import { useLyricsSync } from '@/hooks/useLyricsSync'
 import { useInertiaScroll } from '@/hooks/useInertiaScroll'
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 interface HeartParticle {
   id: number
@@ -20,7 +27,8 @@ interface HeartParticle {
 
 export function PlayerView() {
   const { lyrics, currentLineIndex, isLoaded } = useLyricStore()
-  const { currentMusic, seek, isPlaying } = usePlayerStore()
+  const { currentMusic, seek, isPlaying, currentTime, duration, togglePlay, nextTrack, prevTrack } = usePlayerStore()
+  const { isMobile } = useUIStore()
   const [hearts, setHearts] = useState<HeartParticle[]>([])
   const [shaking, setShaking] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
@@ -93,8 +101,6 @@ export function PlayerView() {
     if (s.currentMusic) useHistoryStore.getState().addEntry(s.currentMusic)
   }, [])
 
-
-
   useEffect(() => {
     if (currentLineIndex >= 0 && lineRefs.current[currentLineIndex]) {
       const el = lineRefs.current[currentLineIndex]
@@ -103,6 +109,45 @@ export function PlayerView() {
       container.scrollTo({ top: el.offsetTop - container.clientHeight * 0.3 + el.clientHeight / 2, behavior: 'smooth' })
     }
   }, [currentLineIndex, scrollRef])
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+
+  if (isMobile) {
+    return (
+      <div className="flex-1 flex items-center justify-center overflow-hidden px-6 py-4">
+        <div className="w-full max-w-[320px] mx-auto flex flex-col items-center" style={{ maxHeight: 'calc(100vh - 80px)' }}>
+          {/* 专辑封面 */}
+          <div className="w-[min(65vw,260px)] shrink-0">
+            <StereoCover
+              src={currentMusic?.coverUrl}
+              alt={currentMusic?.title}
+              size="100%"
+              rounded="rounded-3xl"
+              tiltAmount={0}
+              onClick={handleCoverClick}
+            />
+          </div>
+
+          {/* 歌曲名 */}
+          <p className="text-sm font-bold text-white truncate max-w-[260px] mt-4 text-center shrink-0">
+            {currentMusic?.title || '未选择歌曲'}
+          </p>
+
+          {/* 进度条 */}
+          <div className="w-full max-w-[260px] mt-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-white/40 w-7 text-right tabular-nums">{formatTime(currentTime)}</span>
+              <div className="flex-1 h-[3px] rounded-full bg-white/10 relative cursor-pointer"
+                onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * duration) }}>
+                <div className="h-full rounded-full bg-white/30" style={{ width: `${progress}%` }} />
+              </div>
+              <span className="text-[9px] text-white/40 w-7 tabular-nums">{formatTime(duration)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -140,7 +185,7 @@ export function PlayerView() {
               className="flex flex-col items-center justify-center h-full gap-4 text-center"
             >
               <div className="font-extrabold tracking-tight text-white/80" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
-                {currentMusic ? '等待歌词...' : 'Apple Music Experience'}
+                {currentMusic ? '等待歌词...' : 'Open Music'}
               </div>
               <div className="font-semibold text-white/40" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.4rem)' }}>
                 {currentMusic ? '正在加载歌词' : '搜索音乐开始体验'}
@@ -190,16 +235,7 @@ export function PlayerView() {
               tiltAmount={10}
               onClick={handleCoverClick}
             />
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: isLiked ? 1 : 0 }}
-              className="absolute top-5 right-5 w-9 h-9 rounded-full backdrop-blur-xl flex items-center justify-center z-10"
-              style={{ background: 'rgba(0,0,0,0.4)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={isLiked ? '#ff4d6d' : 'none'} stroke={isLiked ? '#ff4d6d' : 'white'} strokeWidth="2" className={isLiked ? '' : 'text-white/70'}>
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </motion.div>
+
           </div>
         </motion.div>
       </AnimatePresence>

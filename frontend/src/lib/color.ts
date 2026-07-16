@@ -49,9 +49,9 @@ export function processCoverColors(vibrant: string, muted: string, dark: string,
   return [vibrant, muted, dark, light].map((c) => {
     const rgb = parseRgb(c)
     const [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2])
-    const clampedL = Math.max(0.18, Math.min(l, 0.55))
-    const clampedS = Math.min(s, 0.75)
+    const clampedL = Math.max(0.10, Math.min(l, 0.65))
+    const clampedS = Math.min(s, 0.90)
     const [r, g, b] = hslToRgb(h, clampedS, clampedL)
-    return toRgbString(r, g, b, 0.70)
+    return toRgbString(r, g, b, 0.80)
   }) as [string, string, string, string]
 }

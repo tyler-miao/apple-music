@@ -9,7 +9,7 @@ $env:HTTP_PROXY = $Proxy
 $env:HTTPS_PROXY = $Proxy
 
 Write-Host "=====================================" -ForegroundColor Cyan
-Write-Host "  Apple Music - 全自动部署" -ForegroundColor Cyan
+Write-Host "  Open Music - 全自动部署" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 

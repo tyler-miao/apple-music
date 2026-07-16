@@ -19,6 +19,37 @@ router.get('/stats', authenticate, requireAdmin, async (_req: AuthRequest, res: 
   res.json({ totalUsers, totalMusic, totalPlaylists, totalPlays, totalLiked })
 })
 
+// 访问统计
+router.get('/visits', authenticate, requireAdmin, async (_req: AuthRequest, res: Response) => {
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const weekAgo = new Date(todayStart.getTime() - 7 * 86400000)
+
+  const [totalVisits, todayVisits, hourlyData] = await Promise.all([
+    prisma.pageVisit.count(),
+    prisma.pageVisit.count({ where: { createdAt: { gte: todayStart } } }),
+    prisma.pageVisit.groupBy({
+      by: ['createdAt'],
+      where: { createdAt: { gte: weekAgo } },
+      _count: { id: true },
+    }),
+  ])
+
+  const hourlyMap: Record<string, number> = {}
+  for (let i = 0; i < 168; i++) {
+    const d = new Date(weekAgo.getTime() + i * 3600000)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}`
+    hourlyMap[key] = 0
+  }
+  for (const h of hourlyData) {
+    const d = h.createdAt
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}`
+    hourlyMap[key] = (hourlyMap[key] || 0) + h._count.id
+  }
+
+  res.json({ totalVisits, todayVisits, hourly: hourlyMap })
+})
+
 // 用户管理（分页+搜索）
 router.get('/users', authenticate, requireAdmin, async (req: AuthRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1

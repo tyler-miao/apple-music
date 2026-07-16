@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Apple Music Experience',
-  description: 'Apple Music 风格音乐播放器 — 搜索、播放、歌词同步',
+  title: 'Open Music',
+  description: 'Open Music 风格音乐播放器 — 搜索、播放、歌词同步',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

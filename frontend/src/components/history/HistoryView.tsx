@@ -91,7 +91,7 @@ export function HistoryView() {
                   {loadingId === entry.music.id ? (
                     <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   ) : entry.music.coverUrl ? (
-                    <img src={entry.music.coverUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={entry.music.coverUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
                   ) : (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white/30 group-hover:text-white/70">
                       <polygon points="5,3 19,12 5,21" />

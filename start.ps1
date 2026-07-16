@@ -2,7 +2,7 @@ param()
 $ErrorActionPreference = "Continue"
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Write-Host "Apple Music Player 启动中..." -ForegroundColor Cyan
+Write-Host "Open Music Player 启动中..." -ForegroundColor Cyan
 
 # Stop old processes
 Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -34,7 +34,7 @@ Start-Sleep -Seconds 12
 # Save URLs
 $urls = @"
 ============================================
- Apple Music Player - 访问地址
+ Open Music Player - 访问地址
 ============================================
 
 公网访问（需 IPv6）:
@@ -56,7 +56,7 @@ $urls | Out-File -FilePath "$scriptPath\url.txt" -Encoding UTF8
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host " Apple Music Player - 已启动!" -ForegroundColor Green
+Write-Host " Open Music Player - 已启动!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "公网访问 (需 IPv6):" -ForegroundColor Yellow

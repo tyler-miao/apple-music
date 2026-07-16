@@ -1,4 +1,4 @@
-export class AudioEngine {
+﻿export class AudioEngine {
   private ctx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private source: MediaElementAudioSourceNode | null = null
@@ -22,18 +22,20 @@ export class AudioEngine {
   get waveformData(): Uint8Array { return this._waveformData }
   get ready(): Promise<void> { return this._readyPromise }
 
-  ensureResumed() {
-    if (!this.ctx) {
+  async ensureResumed() {
+    if (!this.ctx || this.ctx.state === 'closed') {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume()
+      await this.ctx.resume()
     }
   }
 
   async connect(audio: HTMLAudioElement) {
+    if (this.audioElement === audio && this.source) return
+    this.disconnect()
     this.audioElement = audio
-    if (!this.ctx) {
+    if (!this.ctx || this.ctx.state === 'closed') {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
     if (this.ctx.state === 'suspended') {
@@ -119,7 +121,7 @@ export class AudioEngine {
 
   destroy() {
     this.disconnect()
-    if (this.ctx) this.ctx.close()
+    if (this.ctx && this.ctx.state !== 'closed') this.ctx.close()
     this.ctx = null
     this.audioElement = null
   }

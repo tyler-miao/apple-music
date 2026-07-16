@@ -12,6 +12,7 @@ import uploadRoutes from './routes/upload'
 import playlistRoutes from './routes/playlist'
 import adminRoutes from './routes/admin'
 import proxyRoutes from './routes/proxy'
+import visitRoutes from './routes/visit'
 import { WSManager } from './websocket'
 
 const app = express()
@@ -87,6 +88,7 @@ app.get('/api/audio', async (req, res) => {
 app.use('/api/playlist', playlistRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/proxy', proxyRoutes)
+app.use('/api/visit', visitRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

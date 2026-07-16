@@ -6,21 +6,22 @@ import { z } from 'zod'
 const service = new AuthService()
 
 const registerSchema = z.object({
-  email: z.string().email('邮箱格式无效'),
+  email: z.string().email('邮箱格式无效').optional().or(z.literal('')),
+  phone: z.string().regex(/^1\d{10}$/, '手机号格式无效').optional().or(z.literal('')),
   username: z.string().min(2, '用户名至少2个字符').max(30),
   password: z.string().min(6, '密码至少6个字符').max(100),
-})
+}).refine(d => d.email || d.phone, { message: '邮箱或手机号必须填写一个' })
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1, '请输入邮箱或手机号'),
   password: z.string().min(1),
 })
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, username, password } = registerSchema.parse(req.body)
-      const result = await service.register(email, username, password)
+      const { email, phone, username, password } = registerSchema.parse(req.body)
+      const result = await service.register(email || '', phone || '', username, password)
       res.status(201).json(result)
     } catch (err) {
       next(err)
@@ -29,8 +30,8 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = loginSchema.parse(req.body)
-      const result = await service.login(email, password)
+      const { identifier, password } = loginSchema.parse(req.body)
+      const result = await service.login(identifier, password)
       res.json(result)
     } catch (err) {
       next(err)

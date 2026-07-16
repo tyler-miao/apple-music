@@ -10,6 +10,7 @@ datasource db {
 model User {
   id            String        @id @default(uuid())
   email         String        @unique
+  phone         String?       @unique
   username      String
   password      String        @db.Text
   bio           String        @default("")
@@ -144,6 +145,11 @@ model PlayHistory {
 
   user          User          @relation(fields: [userId], references: [id])
   music         Music         @relation(fields: [musicId], references: [id])
+}
+
+model PageVisit {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
 }
 
 model SystemConfig {

@@ -6,16 +6,22 @@ import { AppError } from '../middleware/error'
 const prisma = new PrismaClient()
 
 export class AuthService {
-  async register(email: string, username: string, password: string) {
-    const exists = await prisma.user.findUnique({ where: { email } })
-    if (exists) throw new AppError(409, '邮箱已注册')
+  async register(email: string, phone: string, username: string, password: string) {
+    if (email) {
+      const exists = await prisma.user.findUnique({ where: { email } })
+      if (exists) throw new AppError(409, '邮箱已注册')
+    }
+    if (phone) {
+      const exists = await prisma.user.findUnique({ where: { phone } })
+      if (exists) throw new AppError(409, '手机号已注册')
+    }
 
     const userCount = await prisma.user.count()
     const role = userCount === 0 ? 'ADMIN' : 'USER'
 
     const hashed = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
-      data: { email, username, password: hashed, role },
+      data: { email: email || '', phone: phone || null, username, password: hashed, role },
     })
 
     const payload = { userId: user.id, email: user.email }
@@ -34,12 +40,15 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) throw new AppError(401, '邮箱或密码错误')
+  async login(identifier: string, password: string) {
+    const isPhone = /^1\d{10}$/.test(identifier)
+    const user = isPhone
+      ? await prisma.user.findUnique({ where: { phone: identifier } })
+      : await prisma.user.findUnique({ where: { email: identifier } })
+    if (!user) throw new AppError(401, '邮箱/手机号或密码错误')
 
     const valid = await bcrypt.compare(password, user.password)
-    if (!valid) throw new AppError(401, '邮箱或密码错误')
+    if (!valid) throw new AppError(401, '邮箱/手机号或密码错误')
 
     const payload = { userId: user.id, email: user.email }
     const accessToken = generateAccessToken(payload)

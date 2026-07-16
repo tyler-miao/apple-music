@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -23,7 +23,7 @@ export function useAudioPlayer() {
   const syncIntervalRef = useRef<number | null>(null)
   const prevMusicIdRef = useRef<string | null>(null)
   const pendingPlayRef = useRef(false)
-  const canPlayHandlerRef = useRef<(() => void) | null>(null)
+  const currentAudioSrcRef = useRef<string>('')
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -48,13 +48,17 @@ export function useAudioPlayer() {
     const onCanPlay = () => {
       if (pendingPlayRef.current) {
         pendingPlayRef.current = false
-        audio.play().catch(() => {})
+        audioEngine.ensureResumed().then(() => {
+          audio.play().catch(() => {})
+        })
       }
     }
     const onCanPlayThrough = () => {
       if (pendingPlayRef.current) {
         pendingPlayRef.current = false
-        audio.play().catch(() => {})
+        audioEngine.ensureResumed().then(() => {
+          audio.play().catch(() => {})
+        })
       }
     }
 
@@ -78,19 +82,21 @@ export function useAudioPlayer() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
-
-    if (isPlaying && currentMusic) {
-      const expectedSrc = currentMusic.audioUrl || currentMusic.sourceId || ''
-      const hasCorrectSrc = expectedSrc && audio.src === expectedSrc
-      if (audio.readyState >= 2 && hasCorrectSrc) {
-        audio.play().catch(() => {})
-      } else {
-        pendingPlayRef.current = true
-      }
-    } else {
-      pendingPlayRef.current = false
-      audio.pause()
-    }
+    ;(async () => {
+      try {
+        if (isPlaying && currentMusic) {
+          await audioEngine.ensureResumed()
+          if (audio.readyState >= 2 && audio.src && currentAudioSrcRef.current) {
+            await audio.play().catch(() => {})
+          } else {
+            pendingPlayRef.current = true
+          }
+        } else {
+          pendingPlayRef.current = false
+          audio.pause()
+        }
+      } catch {}
+    })()
   }, [isPlaying, currentMusic, setIsPlaying])
 
   useEffect(() => {
@@ -147,7 +153,7 @@ export function useAudioPlayer() {
       if (cancelled) return
       if (audioUrl && audio.src !== audioUrl) {
         pendingPlayRef.current = true
-        audio.pause()
+        currentAudioSrcRef.current = audioUrl
 
         if (!audioEngine['ctx'] || audio !== (audioEngine as any).audioElement) {
           await audioEngine.connect(audio)
@@ -159,6 +165,21 @@ export function useAudioPlayer() {
     })()
     return () => { cancelled = true }
   }, [currentMusic])
+
+  useEffect(() => {
+    const onVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return
+      const state = usePlayerStore.getState()
+      if (state.isPlaying && audioRef.current) {
+        await audioEngine.ensureResumed()
+        if (audioRef.current.paused && audioRef.current.readyState >= 2) {
+          audioRef.current.play().catch(() => {})
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
 
   const loadCoverColors = useCallback(() => {
     if (!currentMusic?.coverUrl) return

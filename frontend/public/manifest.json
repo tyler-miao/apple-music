@@ -1,7 +1,7 @@
 {
-  "name": "Apple Music Experience",
-  "short_name": "Music Player",
-  "description": "Apple Music 风格音乐播放器 — 搜索、播放、歌词同步",
+  "name": "Open Music",
+  "short_name": "Open Music",
+  "description": "Open Music 风格音乐播放器 — 搜索、播放、歌词同步",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

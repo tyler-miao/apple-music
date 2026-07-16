@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title Apple Music 自动部署
+title Open Music 自动部署
 
 echo ============================================
-echo   Apple Music 自动部署工具
+echo   Open Music 自动部署工具
 echo ============================================
 echo.
 

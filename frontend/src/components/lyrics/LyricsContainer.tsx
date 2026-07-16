@@ -87,7 +87,7 @@ export function LyricsContainer() {
               className="flex flex-col items-center justify-center h-full gap-4 text-center"
             >
               <div className="font-extrabold tracking-tight text-white/80" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
-                {currentMusic ? '等待歌词...' : 'Apple Music Experience'}
+                {currentMusic ? '等待歌词...' : 'Open Music'}
               </div>
               <div className="font-semibold text-white/40" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.4rem)' }}>
                 {currentMusic ? '正在加载歌词' : '搜索音乐开始体验'}

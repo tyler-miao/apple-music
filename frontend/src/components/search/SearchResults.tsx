@@ -51,7 +51,10 @@ export function SearchResults() {
     setLoadingId(item.id)
     audioEngine.ensureResumed()
     try {
-      const audioUrl = await gdService.getUrl(item.id, item.source, 320)
+      const [audioUrl, coverUrl] = await Promise.all([
+        gdService.getUrl(item.id, item.source, 320),
+        gdService.getPic(item.picId, item.source, 500),
+      ])
       if (!audioUrl) return
 
       const music: Music = {
@@ -59,7 +62,7 @@ export function SearchResults() {
         title: item.name,
         artist: item.artist.join(' / '),
         album: item.album,
-        coverUrl: null,
+        coverUrl,
         audioUrl,
         duration: 0,
         playCount: 0,
@@ -71,19 +74,15 @@ export function SearchResults() {
       setCurrentMusic(music)
       setIsPlaying(true)
 
-      gdService.getPic(item.picId, item.source, 500).then((coverUrl) => {
-        if (coverUrl) {
-          music.coverUrl = coverUrl
-          setCurrentMusic({ ...music })
-          const img = new Image()
-          img.crossOrigin = 'anonymous'
-          img.onload = () => {
-            const colors = extractColorsFromImage(img)
-            setCoverColors(colors)
-          }
-          img.src = coverUrl
+      if (coverUrl) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          try { setCoverColors(extractColorsFromImage(img)) } catch {}
         }
-      })
+        img.onerror = () => {}
+        img.src = coverUrl
+      }
 
       gdService.getLyric(item.lyricId, item.source).then((lyricData) => {
         if (lyricData.lyric) {
